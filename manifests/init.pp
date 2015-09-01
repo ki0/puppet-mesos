@@ -13,6 +13,23 @@
 #   If defined, mesos class will automatically "include $my_class"
 #   Can be defined also by the (top scope) variable $mesos_myclass
 #
+# [*install_prerequisites*]
+#   Set to false if you don't want install this module's prerequisites.
+#   They include the addition of Mesosphere repos (when use_mesos_repo=true)
+#   Via Example42 apt.
+#
+# [*install_zookeeper*]
+#   Set to true if you want install Zookeeper with Mesosphere
+#
+# [*zk_string*]
+#   ZooKeeper connection string
+#
+# [*mesos_ulimit*]
+#   Max number of open files
+#
+# [*attributes_slave*]
+#   Attributes for the Mesos Slave
+#
 # [*source*]
 #   Sets the content of source parameter for main configuration file
 #   If defined, mesos main config file will have the param: source => $source
@@ -35,6 +52,12 @@
 #   If defined, mesos main config file has: content => content("$template")
 #   Note source and template parameters are mutually exclusive: don't use both
 #   Can be defined also by the (top scope) variable $mesos_template
+#
+# [*template_master*]
+#   Sets the path to the template to use as content for /etc/defaults/mesos-master file
+#   If defined, mesos main config file has: content => content("$template_master")
+#   Note source and template parameters are mutually exclusive: don't use both
+#   Can be defined also by the (top scope) variable $mesos_template_master
 #
 # [*options*]
 #   An hash of custom options to be used in templates for arbitrary settings.
@@ -200,12 +223,52 @@
 # See README for usage patterns.
 #
 class mesos (
+  $use_master           = params_lookup( 'use_master' ),
+  $use_slave            = params_lookup( 'use_slave' ),
+  $mesos_ulimit         = params_lookup( 'mesos_ulimit' ),
+
+  $cluster_name         = params_lookup( 'cluster_name' ),
+  $attributes_slave     = params_lookup( 'attributes_slave' ),
+  $quorum               = params_lookup( 'quorum' ),
+  $logging_level        = params_lookup( 'logging_level' ),
+  $logging_level_slave  = params_lookup( 'logging_level_slave' ),
+  $hostname             = params_lookup( 'hostname' ),
+  $hostname_slave       = params_lookup( 'hostname_slave' ),
+  $ip                   = params_lookup( 'ip' ),
+  $ip_slave             = params_lookup( 'ip_slave' ),
+  $resources            = params_lookup( 'resources' ),
+  $port                 = params_lookup( 'port' ),
+  $port_slave           = params_lookup( 'port_slave' ),
+
+  $zk_string            = params_lookup( 'zk_string' ),
+  $install_zookeeper    = params_lookup( 'install_zookeeper' ),
+  $use_mesos_repo       = params_lookup( 'use_mesos_repo' ),
+  $install_prerequisites = params_lookup( 'install_prerequisites' ),
   $my_class            = params_lookup( 'my_class' ),
   $source              = params_lookup( 'source' ),
   $source_dir          = params_lookup( 'source_dir' ),
   $source_dir_purge    = params_lookup( 'source_dir_purge' ),
   $template            = params_lookup( 'template' ),
-  $service_autorestart = params_lookup( 'service_autorestart' , 'global' ),
+  $template_master     = params_lookup( 'template_master' ),
+  $template_slave      = params_lookup( 'template_slave' ),
+  $template_mesos      = params_lookup( 'template_mesos' ),
+
+  $template_quorum     = params_lookup( 'template_quorum' ),
+  $template_cluster    = params_lookup( 'template_cluster' ),
+  $template_log_level  = params_lookup( 'template_log_level' ),
+  $template_hostname   = params_lookup( 'template_hostname' ),
+  $template_ip         = params_lookup( 'template_ip' ),
+
+  $template_attr_slave       = params_lookup( 'template_attr_slave' ),
+  $template_port_slave       = params_lookup( 'template_port_slave' ),
+  $template_resources_slave  = params_lookup( 'template_resources_slave' ),
+  $template_log_level_slave  = params_lookup( 'template_log_level_slave' ),
+  $template_hostname_slave   = params_lookup( 'template_hostname_slave' ),
+  $template_ip_slave         = params_lookup( 'template_ip_slave' ),
+
+  $service_autorestart_master = params_lookup( 'service_autorestart_master' , 'global' ),
+  $service_autorestart_slave  = params_lookup( 'service_autorestart_slave' , 'global' ),
+
   $options             = params_lookup( 'options' ),
   $version             = params_lookup( 'version' ),
   $absent              = params_lookup( 'absent' ),
@@ -224,13 +287,19 @@ class mesos (
   $audit_only          = params_lookup( 'audit_only' , 'global' ),
   $noops               = params_lookup( 'noops' ),
   $package             = params_lookup( 'package' ),
-  $service             = params_lookup( 'service' ),
+  $service_master      = params_lookup( 'service_master' ),
+  $service_slave       = params_lookup( 'service_slave' ),
   $service_status      = params_lookup( 'service_status' ),
   $process             = params_lookup( 'process' ),
+  $process_master      = params_lookup( 'process_master' ),
+  $process_slave       = params_lookup( 'process_slave' ),
   $process_args        = params_lookup( 'process_args' ),
   $process_user        = params_lookup( 'process_user' ),
   $config_dir          = params_lookup( 'config_dir' ),
   $config_file         = params_lookup( 'config_file' ),
+  $config_file_master  = params_lookup( 'config_file_master' ),
+  $config_file_slave   = params_lookup( 'config_file_slave' ),
+  $config_file_mesos   = params_lookup( 'config_file_mesos' ),
   $config_file_mode    = params_lookup( 'config_file_mode' ),
   $config_file_owner   = params_lookup( 'config_file_owner' ),
   $config_file_group   = params_lookup( 'config_file_group' ),
@@ -239,12 +308,15 @@ class mesos (
   $data_dir            = params_lookup( 'data_dir' ),
   $log_dir             = params_lookup( 'log_dir' ),
   $log_file            = params_lookup( 'log_file' ),
-  $port                = params_lookup( 'port' ),
   $protocol            = params_lookup( 'protocol' )
   ) inherits mesos::params {
 
+  $bool_install_zookeeper=any2bool($install_zookeeper)
+  $bool_use_mesos_repo=any2bool($use_mesos_repo)
+  $bool_install_prerequisites = any2bool($install_prerequisites)
   $bool_source_dir_purge=any2bool($source_dir_purge)
-  $bool_service_autorestart=any2bool($service_autorestart)
+  $bool_service_autorestart_master=any2bool($service_autorestart_master)
+  $bool_service_autorestart_slave=any2bool($service_autorestart_slave)
   $bool_absent=any2bool($absent)
   $bool_disable=any2bool($disable)
   $bool_disableboot=any2bool($disableboot)
@@ -280,12 +352,116 @@ class mesos (
     },
   }
 
-  $manage_service_autorestart = $mesos::bool_service_autorestart ? {
-    true    => Service[mesos],
-    false   => undef,
+  if $use_master {
+    $manage_service_autorestart_master = $mesos::bool_service_autorestart_master ? {
+      true    => Service[mesos-master],
+      false   => undef,
+    }
+    $manage_service_ensure_master = 'running'
+    $manage_service_enable_master = true
+  }
+  else {
+    $manage_service_ensure_master = 'stopped'
+    $manage_service_enable_master = false
+    # file { 'mesos-master.override':
+    #   ensure  => 'present',
+    #   path    => '/etc/init/mesos-master.override',
+    #   mode    => $mesos::config_file_mode,
+    #   owner   => $mesos::config_file_owner,
+    #   group   => $mesos::config_file_group,
+    #   require => Package[$mesos::package],
+    #   notify  => $mesos::manage_service_autorestart_master,
+    #   source  => $mesos::manage_file_source,
+    #   content => 'manual',
+    #   replace => $mesos::manage_file_replace,
+    #   audit   => $mesos::manage_audit,
+    #   noop    => $mesos::bool_noops,
+    # }
+  }
+  if $use_slave {
+    $manage_service_autorestart_slave = $mesos::bool_service_autorestart_slave ? {
+      true    => Service[mesos-slave],
+      false   => undef,
+    }
+    $manage_service_ensure_slave = 'running'
+    $manage_service_enable_slave = true
+  }
+  else {
+    $manage_service_ensure_slave = 'stopped'
+    $manage_service_enable_slave = false
   }
 
   $manage_file = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_file_master = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_slave = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_mesos = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_quorum = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_cluster = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_log_level = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_hostname = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_ip = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_attributes = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_port_slave = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_resources = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_hostname_slave = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_log_level_slave = $mesos::bool_absent ? {
+    true    => 'absent',
+    default => 'present',
+  }
+
+  $manage_ip_slave = $mesos::bool_absent ? {
     true    => 'absent',
     default => 'present',
   }
@@ -325,21 +501,115 @@ class mesos (
     default   => template($mesos::template),
   }
 
-  ### Managed resources
-  package { $mesos::package:
-    ensure  => $mesos::manage_package,
-    noop    => $mesos::bool_noops,
+  $manage_file_content_master = $mesos::template_master ? {
+    ''        => undef,
+    default   => template($mesos::template_master),
   }
 
-  service { 'mesos':
-    ensure     => $mesos::manage_service_ensure,
-    name       => $mesos::service,
-    enable     => $mesos::manage_service_enable,
+  $manage_file_content_slave = $mesos::template_slave ? {
+    ''        => undef,
+    default   => template($mesos::template_slave),
+  }
+
+  $manage_file_content_mesos = $mesos::template_mesos ? {
+    ''        => undef,
+    default   => template($mesos::template_mesos),
+  }
+
+  $manage_file_content_quorum = $mesos::template_quorum ? {
+    ''        => undef,
+    default   => template($mesos::template_quorum),
+  }
+
+  $manage_file_content_cluster = $mesos::template_cluster ? {
+    ''        => undef,
+    default   => template($mesos::template_cluster),
+  }
+
+  $manage_file_content_log_level = $mesos::template_log_level ? {
+    ''        => undef,
+    default   => template($mesos::template_log_level),
+  }
+
+  $manage_file_content_hostname = $mesos::template_hostname ? {
+    ''        => undef,
+    default   => template($mesos::template_hostname),
+  }
+
+  $manage_file_content_ip = $mesos::template_ip ? {
+    ''        => undef,
+    default   => template($mesos::template_ip),
+  }
+
+  $manage_file_content_attrs = $mesos::template_attr_slave ? {
+    ''        => undef,
+    default   => template($mesos::template_attr_slave),
+  }
+
+  $manage_file_content_port = $mesos::template_port_slave ? {
+    ''        => undef,
+    default   => template($mesos::template_port_slave),
+  }
+
+  $manage_file_content_resources = $mesos::template_resources_slave ? {
+    ''        => undef,
+    default   => template($mesos::template_resources_slave),
+  }
+
+  $manage_file_content_hostname_slave = $mesos::template_hostname_slave ? {
+    ''        => undef,
+    default   => template($mesos::template_hostname_slave),
+  }
+
+  $manage_file_content_log_level_slave = $mesos::template_log_level_slave ? {
+    ''        => undef,
+    default   => template($mesos::template_log_level_slave),
+  }
+
+  $manage_file_content_ip_slave = $mesos::template_ip_slave ? {
+    ''        => undef,
+    default   => template($mesos::template_ip_slave),
+  }
+
+  ### Managed resources
+  if $bool_use_mesos_repo {
+    require apt::repo::mesosphere
+  }
+
+  if $bool_install_zookeeper {
+    package { $mesos::package:
+      ensure  => $mesos::manage_package,
+      noop    => $mesos::bool_noops,
+    }
+  }
+  else {
+    package { $mesos::package:
+      ensure  => $mesos::manage_package,
+      noop    => $mesos::bool_noops,
+      install_options => [ '--no-install-recommends' ],
+    }
+  }
+
+  service { 'mesos-master':
+    ensure     => $mesos::manage_service_ensure_master,
+    name       => $mesos::service_master,
+    enable     => $mesos::manage_service_enable_master,
     hasstatus  => $mesos::service_status,
-    pattern    => $mesos::process,
+    pattern    => $mesos::process_master,
     require    => Package[$mesos::package],
     noop       => $mesos::bool_noops,
   }
+
+  service { 'mesos-slave':
+    ensure     => $mesos::manage_service_ensure_slave,
+    name       => $mesos::service_slave,
+    enable     => $mesos::manage_service_enable_slave,
+    hasstatus  => $mesos::service_status,
+    pattern    => $mesos::process_slave,
+    require    => Package[$mesos::package],
+    noop       => $mesos::bool_noops,
+  }
+
 
   file { 'mesos.conf':
     ensure  => $mesos::manage_file,
@@ -348,9 +618,223 @@ class mesos (
     owner   => $mesos::config_file_owner,
     group   => $mesos::config_file_group,
     require => Package[$mesos::package],
-    notify  => $mesos::manage_service_autorestart,
+    notify  => $mesos::manage_service_autorestart_master,
     source  => $mesos::manage_file_source,
     content => $mesos::manage_file_content,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'mesos-master':
+    ensure  => $mesos::manage_file_master,
+    path    => $mesos::config_file_master,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_master,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_master,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'mesos-slave':
+    ensure  => $mesos::manage_file_slave,
+    path    => $mesos::config_file_slave,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_slave,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'mesos':
+    ensure  => $mesos::manage_file_mesos,
+    path    => $mesos::config_file_mesos,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_master,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_mesos,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  # MASTER
+
+  file { 'quorum':
+    ensure  => $mesos::manage_quorum,
+    path    => $mesos::config_file_quorum,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_quorum,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'cluster':
+    ensure  => $mesos::manage_cluster,
+    path    => $mesos::config_file_cluster,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_cluster,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'logging_level':
+    ensure  => $mesos::manage_log_level,
+    path    => $mesos::config_file_log_level,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_log_level,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'hostname':
+    ensure  => $mesos::manage_hostname,
+    path    => $mesos::config_file_hostname,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_hostname,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'ip':
+    ensure  => $mesos::manage_ip,
+    path    => $mesos::config_file_ip,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_ip,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  # SLAVE
+
+  file { 'attributes':
+    ensure  => $mesos::manage_attributes,
+    path    => $mesos::config_file_attr,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_attrs,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'port_slave':
+    ensure  => $mesos::manage_port_slave,
+    path    => $mesos::config_file_port,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_port,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'resources':
+    ensure  => $mesos::manage_resources,
+    path    => $mesos::config_file_resources,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_resources,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'hostname_slave':
+    ensure  => $mesos::manage_hostname_slave,
+    path    => $mesos::config_file_hostname_slave,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_hostname_slave,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'logging_level_slave':
+    ensure  => $mesos::manage_log_level_slave,
+    path    => $mesos::config_file_log_level_slave,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_log_level_slave,
+    replace => $mesos::manage_file_replace,
+    audit   => $mesos::manage_audit,
+    noop    => $mesos::bool_noops,
+  }
+
+  file { 'ip_slave':
+    ensure  => $mesos::manage_ip_slave,
+    path    => $mesos::config_file_ip_slave,
+    mode    => $mesos::config_file_mode,
+    owner   => $mesos::config_file_owner,
+    group   => $mesos::config_file_group,
+    require => Package[$mesos::package],
+    notify  => $mesos::manage_service_autorestart_slave,
+    source  => $mesos::manage_file_source,
+    content => $mesos::manage_file_content_ip_slave,
     replace => $mesos::manage_file_replace,
     audit   => $mesos::manage_audit,
     noop    => $mesos::bool_noops,

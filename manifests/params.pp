@@ -16,12 +16,18 @@ class mesos::params {
 
   ### Application related parameters
 
+  $zk_string = ''
+
   $package = $::operatingsystem ? {
     default => 'mesos',
   }
 
-  $service = $::operatingsystem ? {
-    default => 'mesos',
+  $service_master = $::operatingsystem ? {
+    default => 'mesos-master',
+  }
+
+  $service_slave = $::operatingsystem ? {
+    default => 'mesos-slave',
   }
 
   $service_status = $::operatingsystem ? {
@@ -30,6 +36,14 @@ class mesos::params {
 
   $process = $::operatingsystem ? {
     default => 'mesos',
+  }
+
+  $process_master = $::operatingsystem ? {
+    default => 'mesos-master',
+  }
+
+  $process_slave = $::operatingsystem ? {
+    default => 'mesos-slave',
   }
 
   $process_args = $::operatingsystem ? {
@@ -45,7 +59,63 @@ class mesos::params {
   }
 
   $config_file = $::operatingsystem ? {
-    default => '/etc/mesos/mesos.conf',
+    default => '/etc/mesos/zk',
+  }
+
+  $config_file_master = $::operatingsystem ? {
+    default => '/etc/default/mesos-master',
+  }
+
+  $config_file_slave = $::operatingsystem ? {
+    default => '/etc/default/mesos-slave',
+  }
+
+  $config_file_mesos = $::operatingsystem ? {
+    default => '/etc/default/mesos',
+  }
+
+  $config_file_quorum = $::operatingsystem ? {
+    default => '/etc/mesos-master/quorum'
+  }
+
+  $config_file_cluster = $::operatingsystem ? {
+    default => '/etc/mesos-master/cluster'
+  }
+
+  $config_file_log_level = $::operatingsystem ? {
+    default => '/etc/mesos-master/logging_level'
+  }
+
+  $config_file_hostname = $::operatingsystem ? {
+    default => '/etc/mesos-master/hostname'
+  }
+
+  $config_file_ip = $::operatingsystem ? {
+    default => '/etc/mesos-master/ip'
+  }
+
+  $config_file_attr = $::operatingsystem ? {
+    default => '/etc/mesos-slave/attributes',
+  }
+
+  $config_file_port = $::operatingsystem ? {
+    default => '/etc/mesos-slave/port',
+  }
+
+  $config_file_resources = $::operatingsystem ? {
+    default => '/etc/mesos-slave/resources',
+  }
+
+  $config_file_hostname_slave = $::operatingsystem ? {
+    default => '/etc/mesos-slave/hostname',
+  }
+
+  $config_file_log_level_slave = $::operatingsystem ? {
+    default => '/etc/mesos-slave/logging_level',
+  }
+
+  $config_file_ip_slave = $::operatingsystem ? {
+    default => '/etc/mesos-slave/ip',
   }
 
   $config_file_mode = $::operatingsystem ? {
@@ -81,7 +151,8 @@ class mesos::params {
     default => '/var/log/mesos/mesos.log',
   }
 
-  $port = '42'
+  $port = '5050'
+  $port_slave = '5051'
   $protocol = 'tcp'
 
   # General Settings
@@ -90,12 +161,40 @@ class mesos::params {
   $source_dir = ''
   $source_dir_purge = false
   $template = ''
+  $template_master = ''
+  $template_slave  = ''
+  $template_mesos  = ''
+
+  $template_quorum = ''
+  $template_cluster = ''
+  $template_log_level = ''
+  $template_hostname = ''
+  $template_ip = ''
+
+  $template_port_slave  = ''
+  $template_attr_slave  = ''
+  $template_resources_slave = ''
+  $template_hostname_slave = ''
+  $template_log_level_slave = ''
+  $template_ip_slave = ''
+
   $options = ''
-  $service_autorestart = true
+  $service_autorestart_master = true
+  $service_autorestart_slave  = true
   $version = 'present'
   $absent = false
   $disable = false
   $disableboot = false
+  $use_mesos_repo = true
+  $attributes_slave = ''
+  $mesos_ulimit = '65535'
+  $use_master = false
+  $use_slave = false
+  $install_zookeeper = false
+  $cluster_name      = 'MESOS'
+
+  $ip = '0.0.0.0'
+  $ip_slave = '0.0.0.0'
 
   ### General module variables that can have a site or per module default
   $monitor = false
