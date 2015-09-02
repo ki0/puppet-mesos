@@ -27,6 +27,9 @@
 # [*mesos_ulimit*]
 #   Max number of open files
 #
+# [*quorum*]
+#   Max number of open files
+#
 # [*attributes_slave*]
 #   Attributes for the Mesos Slave
 #
@@ -52,6 +55,9 @@
 #   If defined, mesos main config file has: content => content("$template")
 #   Note source and template parameters are mutually exclusive: don't use both
 #   Can be defined also by the (top scope) variable $mesos_template
+#
+# [*template_zk*]
+#   Template for zk_string
 #
 # [*template_master*]
 #   Sets the path to the template to use as content for /etc/defaults/mesos-master file
@@ -248,10 +254,10 @@ class mesos (
   $source              = params_lookup( 'source' ),
   $source_dir          = params_lookup( 'source_dir' ),
   $source_dir_purge    = params_lookup( 'source_dir_purge' ),
-  $template            = params_lookup( 'template' ),
+  $template_zk         = params_lookup( 'template_zk' ),
   $template_master     = params_lookup( 'template_master' ),
   $template_slave      = params_lookup( 'template_slave' ),
-  $template_mesos      = params_lookup( 'template_mesos' ),
+  $template      = params_lookup( 'template' ),
 
   $template_quorum     = params_lookup( 'template_quorum' ),
   $template_cluster    = params_lookup( 'template_cluster' ),
@@ -363,20 +369,6 @@ class mesos (
   else {
     $manage_service_ensure_master = 'stopped'
     $manage_service_enable_master = false
-    # file { 'mesos-master.override':
-    #   ensure  => 'present',
-    #   path    => '/etc/init/mesos-master.override',
-    #   mode    => $mesos::config_file_mode,
-    #   owner   => $mesos::config_file_owner,
-    #   group   => $mesos::config_file_group,
-    #   require => Package[$mesos::package],
-    #   notify  => $mesos::manage_service_autorestart_master,
-    #   source  => $mesos::manage_file_source,
-    #   content => 'manual',
-    #   replace => $mesos::manage_file_replace,
-    #   audit   => $mesos::manage_audit,
-    #   noop    => $mesos::bool_noops,
-    # }
   }
   if $use_slave {
     $manage_service_autorestart_slave = $mesos::bool_service_autorestart_slave ? {
@@ -496,9 +488,9 @@ class mesos (
     default   => $mesos::source,
   }
 
-  $manage_file_content = $mesos::template ? {
+  $manage_file_content = $mesos::template_zk ? {
     ''        => undef,
-    default   => template($mesos::template),
+    default   => template($mesos::template_zk),
   }
 
   $manage_file_content_master = $mesos::template_master ? {
@@ -511,9 +503,9 @@ class mesos (
     default   => template($mesos::template_slave),
   }
 
-  $manage_file_content_mesos = $mesos::template_mesos ? {
+  $manage_file_content_mesos = $mesos::template ? {
     ''        => undef,
-    default   => template($mesos::template_mesos),
+    default   => template($mesos::template),
   }
 
   $manage_file_content_quorum = $mesos::template_quorum ? {

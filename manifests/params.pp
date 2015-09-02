@@ -163,7 +163,7 @@ class mesos::params {
   $template = ''
   $template_master = ''
   $template_slave  = ''
-  $template_mesos  = ''
+  $template_zk  = ''
 
   $template_quorum = ''
   $template_cluster = ''
@@ -192,6 +192,7 @@ class mesos::params {
   $use_slave = false
   $install_zookeeper = false
   $cluster_name      = 'MESOS'
+  $quorum = '1'
 
   $ip = '0.0.0.0'
   $ip_slave = '0.0.0.0'
