@@ -375,6 +375,16 @@ class mesos (
     }
     $manage_service_ensure_master = 'running'
     $manage_service_enable_master = true
+
+    service { 'mesos-master':
+      ensure     => $mesos::manage_service_ensure_master,
+      name       => $mesos::service_master,
+      enable     => $mesos::manage_service_enable_master,
+      hasstatus  => $mesos::service_status,
+      pattern    => $mesos::process_master,
+      require    => Package[$mesos::package],
+      noop       => $mesos::bool_noops,
+    }
   }
   else {
     $manage_service_ensure_master = 'stopped'
@@ -387,6 +397,16 @@ class mesos (
     }
     $manage_service_ensure_slave = 'running'
     $manage_service_enable_slave = true
+
+    service { 'mesos-slave':
+      ensure     => $mesos::manage_service_ensure_slave,
+      name       => $mesos::service_slave,
+      enable     => $mesos::manage_service_enable_slave,
+      hasstatus  => $mesos::service_status,
+      pattern    => $mesos::process_slave,
+      require    => Package[$mesos::package],
+      noop       => $mesos::bool_noops,
+    }
   }
   else {
     $manage_service_ensure_slave = 'stopped'
@@ -591,27 +611,6 @@ class mesos (
       install_options => [ '--no-install-recommends' ],
     }
   }
-
-  service { 'mesos-master':
-    ensure     => $mesos::manage_service_ensure_master,
-    name       => $mesos::service_master,
-    enable     => $mesos::manage_service_enable_master,
-    hasstatus  => $mesos::service_status,
-    pattern    => $mesos::process_master,
-    require    => Package[$mesos::package],
-    noop       => $mesos::bool_noops,
-  }
-
-  service { 'mesos-slave':
-    ensure     => $mesos::manage_service_ensure_slave,
-    name       => $mesos::service_slave,
-    enable     => $mesos::manage_service_enable_slave,
-    hasstatus  => $mesos::service_status,
-    pattern    => $mesos::process_slave,
-    require    => Package[$mesos::package],
-    noop       => $mesos::bool_noops,
-  }
-
 
   file { 'mesos.conf':
     ensure  => $mesos::manage_file,
