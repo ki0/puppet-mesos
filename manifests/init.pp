@@ -13,11 +13,6 @@
 #   If defined, mesos class will automatically "include $my_class"
 #   Can be defined also by the (top scope) variable $mesos_myclass
 #
-# [*install_prerequisites*]
-#   Set to false if you don't want install this module's prerequisites.
-#   They include the addition of Mesosphere repos (when use_mesos_repo=true)
-#   Via Example42 apt.
-#
 # [*install_zookeeper*]
 #   Set to true if you want install Zookeeper with Mesosphere
 #
@@ -32,6 +27,12 @@
 #
 # [*attributes_slave*]
 #   Attributes for the Mesos Slave
+#
+# [*ip*]
+#   IP to listening on the Master
+#
+# [*ip_slave*]
+#   IP to listening on the Slave
 #
 # [*source*]
 #   Sets the content of source parameter for main configuration file
@@ -215,16 +216,27 @@
 #   Log file(s). Used by puppi
 #
 # [*port*]
-#   The listening port, if any, of the service.
+#   The listening port, if any, of the master service.
 #   This is used by monitor, firewall and puppi (optional) components
 #   Note: This doesn't necessarily affect the service configuration file
 #   Can be defined also by the (top scope) variable $mesos_port
+#
+# [*port_slave*]
+#   The listening port, if any, of the slave service.
+#   This is used by monitor, firewall and puppi (optional) components
+#   Note: This doesn't necessarily affect the service configuration file
+#   Can be defined also by the (top scope) variable $mesos_port_slave
 #
 # [*protocol*]
 #   The protocol used by the the service.
 #   This is used by monitor, firewall and puppi (optional) components
 #   Can be defined also by the (top scope) variable $mesos_protocol
 #
+# [*use_master*]
+#   Activate Mesos Master
+#
+# [*use_slave*]
+#   Activate Mesos Slave
 #
 # See README for usage patterns.
 #
@@ -249,7 +261,6 @@ class mesos (
   $zk_string            = params_lookup( 'zk_string' ),
   $install_zookeeper    = params_lookup( 'install_zookeeper' ),
   $use_mesos_repo       = params_lookup( 'use_mesos_repo' ),
-  $install_prerequisites = params_lookup( 'install_prerequisites' ),
   $my_class            = params_lookup( 'my_class' ),
   $source              = params_lookup( 'source' ),
   $source_dir          = params_lookup( 'source_dir' ),
@@ -319,7 +330,6 @@ class mesos (
 
   $bool_install_zookeeper=any2bool($install_zookeeper)
   $bool_use_mesos_repo=any2bool($use_mesos_repo)
-  $bool_install_prerequisites = any2bool($install_prerequisites)
   $bool_source_dir_purge=any2bool($source_dir_purge)
   $bool_service_autorestart_master=any2bool($service_autorestart_master)
   $bool_service_autorestart_slave=any2bool($service_autorestart_slave)
