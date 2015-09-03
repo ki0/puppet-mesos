@@ -368,51 +368,6 @@ class mesos (
     },
   }
 
-  if $use_master {
-    $manage_service_autorestart_master = $mesos::bool_service_autorestart_master ? {
-      true    => Service[mesos-master],
-      false   => undef,
-    }
-    $manage_service_ensure_master = 'running'
-    $manage_service_enable_master = true
-
-    service { 'mesos-master':
-      ensure     => $mesos::manage_service_ensure_master,
-      name       => $mesos::service_master,
-      enable     => $mesos::manage_service_enable_master,
-      hasstatus  => $mesos::service_status,
-      pattern    => $mesos::process_master,
-      require    => Package[$mesos::package],
-      noop       => $mesos::bool_noops,
-    }
-  }
-  else {
-    $manage_service_ensure_master = 'stopped'
-    $manage_service_enable_master = false
-  }
-  if $use_slave {
-    $manage_service_autorestart_slave = $mesos::bool_service_autorestart_slave ? {
-      true    => Service[mesos-slave],
-      false   => undef,
-    }
-    $manage_service_ensure_slave = 'running'
-    $manage_service_enable_slave = true
-
-    service { 'mesos-slave':
-      ensure     => $mesos::manage_service_ensure_slave,
-      name       => $mesos::service_slave,
-      enable     => $mesos::manage_service_enable_slave,
-      hasstatus  => $mesos::service_status,
-      pattern    => $mesos::process_slave,
-      require    => Package[$mesos::package],
-      noop       => $mesos::bool_noops,
-    }
-  }
-  else {
-    $manage_service_ensure_slave = 'stopped'
-    $manage_service_enable_slave = false
-  }
-
   $manage_file = $mesos::bool_absent ? {
     true    => 'absent',
     default => 'present',
@@ -611,6 +566,52 @@ class mesos (
       install_options => [ '--no-install-recommends' ],
     }
   }
+
+  if $use_master {
+    $manage_service_autorestart_master = $mesos::bool_service_autorestart_master ? {
+      true    => Service[mesos-master],
+      false   => undef,
+    }
+    $manage_service_ensure_master = 'running'
+    $manage_service_enable_master = true
+
+    service { 'mesos-master':
+      ensure     => $mesos::manage_service_ensure_master,
+      name       => $mesos::service_master,
+      enable     => $mesos::manage_service_enable_master,
+      hasstatus  => $mesos::service_status,
+      pattern    => $mesos::process_master,
+      require    => Package[$mesos::package],
+      noop       => $mesos::bool_noops,
+    }
+  }
+  else {
+    $manage_service_ensure_master = 'stopped'
+    $manage_service_enable_master = false
+  }
+  if $use_slave {
+    $manage_service_autorestart_slave = $mesos::bool_service_autorestart_slave ? {
+      true    => Service[mesos-slave],
+      false   => undef,
+    }
+    $manage_service_ensure_slave = 'running'
+    $manage_service_enable_slave = true
+
+    service { 'mesos-slave':
+      ensure     => $mesos::manage_service_ensure_slave,
+      name       => $mesos::service_slave,
+      enable     => $mesos::manage_service_enable_slave,
+      hasstatus  => $mesos::service_status,
+      pattern    => $mesos::process_slave,
+      require    => Package[$mesos::package],
+      noop       => $mesos::bool_noops,
+    }
+  }
+  else {
+    $manage_service_ensure_slave = 'stopped'
+    $manage_service_enable_slave = false
+  }
+
 
   file { 'mesos.conf':
     ensure  => $mesos::manage_file,
