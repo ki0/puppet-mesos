@@ -164,17 +164,16 @@ class mesos::params {
   $template_master = 'mesos/mesos-master.erb'
   $template_slave  = 'mesos/mesos-slave.erb'
   $template_zk  = 'mesos/zk.erb'
+  $template_hostname = 'mesos/hostname.erb'
 
   $template_quorum = 'mesos/master/quorum.erb'
   $template_cluster = 'mesos/master/cluster.erb'
   $template_log_level = 'mesos/master/logging_level.erb'
-  $template_hostname = 'mesos/master/hostname.erb'
   $template_ip = 'mesos/master/ip.erb'
 
   $template_port_slave  = 'mesos/slave/port.erb'
   $template_attr_slave  = 'mesos/slave/attributes.erb'
   $template_resources_slave = 'mesos/slave/resources.erb'
-  $template_hostname_slave = 'mesos/slave/hostname.erb'
   $template_log_level_slave = 'mesos/slave/logging_level.erb'
   $template_ip_slave = 'mesos/slave/ip.erb'
 
