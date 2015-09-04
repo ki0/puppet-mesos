@@ -279,7 +279,6 @@ class mesos (
   $template_port_slave       = params_lookup( 'template_port_slave' ),
   $template_resources_slave  = params_lookup( 'template_resources_slave' ),
   $template_log_level_slave  = params_lookup( 'template_log_level_slave' ),
-  $template_hostname_slave   = params_lookup( 'template_hostname_slave' ),
   $template_ip_slave         = params_lookup( 'template_ip_slave' ),
 
   $service_autorestart_master = params_lookup( 'service_autorestart_master' , 'global' ),
@@ -532,11 +531,6 @@ class mesos (
     default   => template($mesos::template_resources_slave),
   }
 
-  $manage_file_content_hostname_slave = $mesos::template_hostname_slave ? {
-    ''        => undef,
-    default   => template($mesos::template_hostname_slave),
-  }
-
   $manage_file_content_log_level_slave = $mesos::template_log_level_slave ? {
     ''        => undef,
     default   => template($mesos::template_log_level_slave),
@@ -681,7 +675,7 @@ class mesos (
     owner   => $mesos::config_file_owner,
     group   => $mesos::config_file_group,
     require => Package[$mesos::package],
-    notify  => $mesos::manage_service_autorestart_slave,
+    notify  => $mesos::manage_service_autorestart_master,
     source  => $mesos::manage_file_source,
     content => $mesos::manage_file_content_quorum,
     replace => $mesos::manage_file_replace,
@@ -696,7 +690,7 @@ class mesos (
     owner   => $mesos::config_file_owner,
     group   => $mesos::config_file_group,
     require => Package[$mesos::package],
-    notify  => $mesos::manage_service_autorestart_slave,
+    notify  => $mesos::manage_service_autorestart_master,
     source  => $mesos::manage_file_source,
     content => $mesos::manage_file_content_cluster,
     replace => $mesos::manage_file_replace,
@@ -711,7 +705,7 @@ class mesos (
     owner   => $mesos::config_file_owner,
     group   => $mesos::config_file_group,
     require => Package[$mesos::package],
-    notify  => $mesos::manage_service_autorestart_slave,
+    notify  => $mesos::manage_service_autorestart_master,
     source  => $mesos::manage_file_source,
     content => $mesos::manage_file_content_log_level,
     replace => $mesos::manage_file_replace,
@@ -726,7 +720,7 @@ class mesos (
     owner   => $mesos::config_file_owner,
     group   => $mesos::config_file_group,
     require => Package[$mesos::package],
-    notify  => $mesos::manage_service_autorestart_slave,
+    notify  => $mesos::manage_service_autorestart_master,
     source  => $mesos::manage_file_source,
     content => $mesos::manage_file_content_hostname,
     replace => $mesos::manage_file_replace,
@@ -741,7 +735,7 @@ class mesos (
     owner   => $mesos::config_file_owner,
     group   => $mesos::config_file_group,
     require => Package[$mesos::package],
-    notify  => $mesos::manage_service_autorestart_slave,
+    notify  => $mesos::manage_service_autorestart_master,
     source  => $mesos::manage_file_source,
     content => $mesos::manage_file_content_ip,
     replace => $mesos::manage_file_replace,
@@ -797,7 +791,7 @@ class mesos (
   }
 
   file { 'hostname_slave':
-    ensure  => $mesos::manage_hostname_slave,
+    ensure  => $mesos::manage_hostname,
     path    => $mesos::config_file_hostname_slave,
     mode    => $mesos::config_file_mode,
     owner   => $mesos::config_file_owner,
@@ -805,7 +799,7 @@ class mesos (
     require => Package[$mesos::package],
     notify  => $mesos::manage_service_autorestart_slave,
     source  => $mesos::manage_file_source,
-    content => $mesos::manage_file_content_hostname_slave,
+    content => $mesos::manage_file_content_hostname,
     replace => $mesos::manage_file_replace,
     audit   => $mesos::manage_audit,
     noop    => $mesos::bool_noops,
