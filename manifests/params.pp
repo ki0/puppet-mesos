@@ -58,7 +58,7 @@ class mesos::params {
     default => '/etc/mesos',
   }
 
-  $config_file = $::operatingsystem ? {
+  $config_file_zk = $::operatingsystem ? {
     default => '/etc/mesos/zk',
   }
 

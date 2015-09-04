@@ -599,15 +599,13 @@ class mesos (
     $manage_service_enable_slave = false
   }
 
-
-  file { 'mesos.conf':
+  file { 'mesos.zk':
     ensure  => $mesos::manage_file,
-    path    => $mesos::config_file,
+    path    => $mesos::config_file_zk,
     mode    => $mesos::config_file_mode,
     owner   => $mesos::config_file_owner,
     group   => $mesos::config_file_group,
     require => Package[$mesos::package],
-    notify  => $mesos::manage_service_autorestart_master,
     source  => $mesos::manage_file_source,
     content => $mesos::manage_file_content,
     replace => $mesos::manage_file_replace,
@@ -652,7 +650,6 @@ class mesos (
     owner   => $mesos::config_file_owner,
     group   => $mesos::config_file_group,
     require => Package[$mesos::package],
-    notify  => $mesos::manage_service_autorestart_master,
     source  => $mesos::manage_file_source,
     content => $mesos::manage_file_content_mesos,
     replace => $mesos::manage_file_replace,
