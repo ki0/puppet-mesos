@@ -195,6 +195,7 @@ class mesos::params {
   $quorum = '1'
   $logging_level = 'ERROR'
   $logging_level_slave = 'ERROR'
+  $hostname = $::fqdn
 
   $ip = '0.0.0.0'
   $ip_slave = '0.0.0.0'
