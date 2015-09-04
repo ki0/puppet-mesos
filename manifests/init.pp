@@ -251,7 +251,6 @@ class mesos (
   $logging_level        = params_lookup( 'logging_level' ),
   $logging_level_slave  = params_lookup( 'logging_level_slave' ),
   $hostname             = params_lookup( 'hostname' ),
-  $hostname_slave       = params_lookup( 'hostname_slave' ),
   $ip                   = params_lookup( 'ip' ),
   $ip_slave             = params_lookup( 'ip_slave' ),
   $resources            = params_lookup( 'resources' ),
